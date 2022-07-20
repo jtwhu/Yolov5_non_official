@@ -71,11 +71,11 @@ class C3_block(nn.Module):
             ),dim=1
         )
 
-class SPP():
+class SPP(nn.Module):
     # spatial pyramid pooling layer used in YoloV3-SPP
     # SPP使用了不同大小的池化核做最大池化进行特征提取，提高网络感受野
     # yolov4中间，SPP模块被镶嵌在FPN结构中，但是v5中被放到了backbone中
-    def __init__(self, c1, c2, k=(5, 9, 13)) -> None:
+    def __init__(self, c1, c2, k=(5, 9, 13)):
         super(SPP, self).__init__()
         
         c_ = c1 // 2
@@ -84,9 +84,9 @@ class SPP():
         self.cv2 = Conv(c_ * (len(k)+1), c2, 1, 1)
         self.m = nn.ModuleList([nn.MaxPool2d(kernel_size=x, stride=1, padding= x // 2) for x in k])
 
-        def forward(self, x):
-            x = self.cv1(x)
-            return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
+    def forward(self, x):
+        x = self.cv1(x)
+        return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
 
 
 class CSPDarknet(nn.Module):
@@ -145,7 +145,10 @@ class CSPDarknet(nn.Module):
 
 if __name__ == "__main__":
     fs = Focus(3, 64)
-    print(fs)
-    x = torch.ones([1, 3, 640, 640])
-    fs.forward(x)
+    c3 = C3_block(32, 64)
+    spp = SPP(32, 64)
+    csp = CSPDarknet(base_depth=3, base_channels=64)
+    
+    print(spp)
+    print(csp)
     pass
