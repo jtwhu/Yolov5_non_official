@@ -110,8 +110,30 @@ if __name__ == "__main__":
         anchor_w = anchor_w.repeat(batch_size, 1).repeat(1, 1, input_height*input_width).view(w.shape)
         anchor_h = anchor_h.repeat(batch_size, 1).repeat(1, 1, input_height*input_width).view(h.shape)
 
-
         # 使用预测结果对先验框进行调整
+        # 每一个特征点只负责特定区域范围内的预测，也就是下面所示的范围
+        # x 0 ~ 1 => 0 ~ 2 => -0.5 ~ 1.5 + grid_x
+        # y 0 ~ 1 => 0 ~ 2 => -0.5 ~ 1.5 + grid_y
+        # 宽高的调整范围为原始大小的0-4倍之间，预测框为先验框的0-4倍之间
+        # w 0 ~ 1 => 0 ~ 2 => 0 ~ 4 * anchor_w
+        # h 0 ~ 1 => 0 ~ 2 => 0 ~ 4 * anchor_h
+        pred_boxes = FloatTensor(prediction[..., :4].shape)
+        pred_boxes[..., 0] = x.data * 2 - 0.5 + grid_x
+        pred_boxes[..., 1] = y.data * 2 - 0.5 + grid_y
+        pred_boxes[..., 2] = (w.data * 2) ** 2 * anchor_w
+        pred_boxes[..., 3] = (w.data * 2) ** 2 * anchor_h
+
+        point_h = 5
+        point_w = 5
+
+        box_xy = pred_boxes[..., 0:2].cpu().numpy() * 32
+        box_wh = pred_boxes[..., 2:4].cpu().numpy() * 32
+        grid_x = grid_x.cpu().numpy() * 32
+        grid_y = grid_y.cpu().numpy() * 32
+        anchor_w  = anchor_w.cpu().numpy() * 32
+        anchor_h  = anchor_h.cpu().numpy() * 32
+
+        
         # 输出调整后的先验框
 
 
